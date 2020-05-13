@@ -1,33 +1,27 @@
-### 1. Get python 3.6
+ARG BUILD_TYPE=standard
+
+# Get python 3.6 and install build dependencies
 FROM python:3.6-alpine AS base
-
-FROM base as standard
-
-WORKDIR /tmp
-COPY ./requirements.txt /tmp
-
-### 2. Get required packages via the package manager
 RUN apk update \
 	&& apk upgrade \
 	&& apk add --no-cache bash \
-	&& apk add build-base \
-	&& apk add --no-cache openjdk8-jre \
-	### 3 Get pypandoc, pyspark and pytest from pip
-	&& pip install --trusted-host=pypi.python.org --trusted-host=pypi.org --trusted-host=files.pythonhosted.org --no-cache-dir -r /tmp/requirements.txt
-
-FROM base AS local
-
+	&& apk add --no-cache --virtual build-deps build-base \
+	&& apk add --no-cache openjdk8-jre
 WORKDIR /tmp
 COPY ./requirements.txt /tmp
+
+# Install custom CA certs & pip config
+FROM base as local-preinstall
+WORKDIR /tmp
 COPY ./ca-cert.pem /tmp
 RUN mkdir -v -p ~/.pip
 COPY ./pip.conf /root/.pip
-RUN rm -rf ~/.cache/pip
 
-RUN apk update \
-	&& apk upgrade \
-	&& apk add --no-cache bash \
-	&& apk add build-base \
-	&& apk add --no-cache openjdk8-jre \
-	&& pip install --trusted-host=pypi.python.org --trusted-host=pypi.org --trusted-host=files.pythonhosted.org --no-cache-dir -r /tmp/requirements.txt \
+# Skip custom CA certs & pip config for standard builds
+FROM base as standard-preinstall
+RUN echo "Skipping custom SSL pip configuration"
+
+# Install Python packages
+FROM ${BUILD_TYPE}-preinstall as install
+RUN pip install --no-cache-dir -r /tmp/requirements.txt \
 	&& apk del build-deps
