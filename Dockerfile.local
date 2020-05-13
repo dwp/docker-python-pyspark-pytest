@@ -1,0 +1,16 @@
+### 1. Get python 3.6
+FROM python:3.6-alpine
+
+WORKDIR /tmp
+COPY ./requirements.txt /tmp
+COPY ./ca-cert.pem /tmp
+RUN mkdir -v -p ~/.pip
+COPY ./pip.conf /root/.pip
+RUN rm -rf ~/.cache/pip
+
+### 2. Get required packages via the package manager
+RUN apk add --no-cache bash
+RUN apk add --no-cache openjdk8-jre
+RUN apk add --no-cache --virtual build-deps build-base
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+RUN apk del build-deps
