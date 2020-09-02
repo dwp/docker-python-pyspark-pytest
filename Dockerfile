@@ -12,7 +12,6 @@ RUN apk update \
 	&& apk add --no-cache bash \
 	&& apk add build-base \
 	&& apk add maven
-#	&& apk add --no-cache openjdk8-jre
 
 RUN { \
     echo '#!/bin/sh'; \
