@@ -1,0 +1,10 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.13.5
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+  SNYK-PYTHON-PYYAML-590151:
+    - '*':
+        reason: Latest version of AWS CLI, no fix.
+        expires: 2030-06-24T00:00:00.000Z
+patch: {}
+
