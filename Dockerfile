@@ -1,42 +1,31 @@
-### 1. Get python 3.6
+FROM python:3.6-alpine as base
 
-FROM python:3.6-alpine
+# Stage 1 - build/retrieve all our dependencies
+FROM base as builder
 
-WORKDIR /tmp
-COPY ./requirements.txt /tmp
-COPY ./pom.xml /tmp/pom.xml
+RUN mkdir /install
+WORKDIR /install
 
-### 2. Get required packages via the package manager
-RUN apk update \
-	&& apk upgrade \
-	&& apk add --no-cache bash \
-	&& apk add build-base \
-	&& apk add maven
+# 1.1 - install Python dependencies
+COPY requirements.txt /
+RUN apk --update --no-cache add gcc musl-dev libffi-dev openssl-dev
+RUN pip install --no-cache-dir --prefix /install --no-warn-script-location -r /requirements.txt
+# moto doesn't install flask, but needs it for the standalone server
+RUN pip install --no-cache-dir --prefix /install --no-warn-script-location flask
 
-RUN { \
-    echo '#!/bin/sh'; \
-    echo 'set -e'; \
-    echo; \
-    echo 'dirname "$(dirname "$(readlink -f "$(which javac || which java)")")"'; \
-    } > /usr/local/bin/docker-java-home \
-    && chmod +x /usr/local/bin/docker-java-home
+# 1.2 - Install Java (Spark) dependencies
+COPY pom.xml /
+RUN apk --update --no-cache add maven openjdk8
+RUN mvn install -f /pom.xml
+
+# Stage 2 - build the final image
+FROM base
+# install Bash for PyTest, and Java for PySpark
+RUN apk --update --no-cache add bash openjdk8-jre-base
+# install the Python libraries built in stage 1
+COPY --from=builder /install /usr/local
+# install the Java libraries built in stage 1
+RUN mkdir /root/.m2
+COPY --from=builder /root/.m2 /root/.m2
+# set JAVA_HOME, required by PySpark
 ENV JAVA_HOME /usr/lib/jvm/java-1.8-openjdk
-ENV PATH $PATH:/usr/lib/jvm/java-1.8-openjdk/jre/bin:/usr/lib/jvm/java-1.8-openjdk/bin
-ENV JAVA_VERSION 8u252
-ENV JAVA_ALPINE_VERSION 8.252.09-r0
-RUN set -x \
-    && apk add --update \
-    && apk add --no-cache \
-            openjdk8="$JAVA_ALPINE_VERSION" \
-    && [ "$JAVA_HOME" = "$(docker-java-home)" ] \
-### 3. To resolve issues installing cryptography python module run below commands
-	&& apk add py-cryptography \
-	&& apk add gcc musl-dev libffi-dev openssl-dev python3-dev \
-	&& pip install cryptography -vvv --no-binary=cryptography \
-	&& pip install flask \
-### 4 Get pypandoc, pyspark and pytest from pip
-	&& pip install --trusted-host=pypi.python.org --trusted-host=pypi.org --trusted-host=files.pythonhosted.org --no-cache-dir -r /tmp/requirements.txt \
-### 5 Running below command to get runtime dependencies for pyspark
-    && mvn install && rm -rf target
-
-
