@@ -6,5 +6,13 @@ ignore:
     - '*':
         reason: Latest version of AWS CLI, no fix.
         expires: 2030-06-24T00:00:00.000Z
+  SNYK-JAVA-ORGAPACHEHTTPCOMPONENTS-30646:
+    - '*':
+        reason: Need to use specific version and cannot bump the version to build the image.
+        expires: 2030-06-24T00:00:00.000Z
+  SNYK-JAVA-ORGAPACHEHTTPCOMPONENTS-31517:
+     - '*':
+        reason: Need to use specific version and cannot bump the version to build the image.
+        expires: 2030-06-24T00:00:00.000Z
 patch: {}
 
