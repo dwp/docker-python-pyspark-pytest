@@ -2,4 +2,4 @@ from steps import dummy
 
 
 def test_dummy(spark):
-    assert 1 == 1
+    assert 1 != 2
