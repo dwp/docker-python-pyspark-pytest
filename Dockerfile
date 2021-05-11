@@ -8,7 +8,7 @@ WORKDIR /install
 
 # 1.1 - install Python dependencies
 COPY requirements.txt /
-RUN apk --update --no-cache add gcc musl-dev libffi-dev openssl-dev
+RUN apk --update --no-cache add gcc musl-dev libffi-dev openssl-dev rust cargo
 RUN pip install --no-cache-dir --prefix /install --no-warn-script-location -r /requirements.txt
 RUN pip install --no-cache-dir -r /requirements.txt
 # moto doesn't install flask, but needs it for the standalone server
